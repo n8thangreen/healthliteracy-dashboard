@@ -1,0 +1,74 @@
+--- 
+title: "Health Literacy Dashboard"
+# author: "Newham Council & UCL"
+format: 
+  dashboard:
+    logo: images/newham-london-logo.png
+---
+
+## Row {height=20%}
+  
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+library(healthliteracy)
+
+data("mrp_data")
+data("ame_data")
+data("stat_ame_data")
+```
+
+```{r}
+#| content: valuebox
+#| title: "Literacy"
+list(
+  icon = "pen",
+  color = "primary",
+  value = 56
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "IT Literacy"
+list(
+  icon = "keyboard",
+  color = "danger",
+  value = 56
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Numeracy"
+list(
+  icon = "calculator",
+  color = "success",
+  value = 56
+)
+```
+
+## Row {height="80%"}
+
+```{r}
+#| fig-width: 5
+#| fig-height: 4
+#| 
+plot_dat <-
+  bind_rows(ame_data, .id = "vars") |>
+  group_by(vars, name) 
+
+plot_dat |>
+  ggplot(aes(x = vars, y = ame_base, fill = name)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Average Marginal Effect",
+       x = "Variable",
+       y = "AME") +
+  theme(legend.position = "none") +
+  coord_flip()
+```
