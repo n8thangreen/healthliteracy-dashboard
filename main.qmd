@@ -6,7 +6,6 @@ format:
     logo: images/newham-london-logo.png
 ---
 
-## Row {height=20%}
   
 ```{r}
 library(ggplot2)
@@ -21,45 +20,68 @@ data("ame_data")
 data("stat_ame_data")
 ```
 
-```{r}
-#| content: valuebox
-#| title: "Literacy"
-list(
-  icon = "pen",
-  color = "primary",
-  value = 56
-)
-```
+<!-- ## {.sidebar} -->
 
-```{r}
-#| content: valuebox
-#| title: "IT Literacy"
-list(
-  icon = "keyboard",
-  color = "danger",
-  value = 56
-)
-```
+<!-- Sidebar content -->
 
-```{r}
-#| content: valuebox
-#| title: "Numeracy"
-list(
-  icon = "calculator",
-  color = "success",
-  value = 56
-)
-```
+## Row {height=20%}
 
-## Row {height="80%"}
+<!-- ```{r} -->
+<!-- #| content: valuebox -->
+<!-- #| title: "Literacy" -->
+<!-- list( -->
+<!--   icon = "pen", -->
+<!--   color = "primary", -->
+<!--   value = 56 -->
+<!-- ) -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- #| content: valuebox -->
+<!-- #| title: "IT Literacy" -->
+<!-- list( -->
+<!--   icon = "keyboard", -->
+<!--   color = "danger", -->
+<!--   value = 56 -->
+<!-- ) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- #| content: valuebox -->
+<!-- #| title: "Numeracy" -->
+<!-- list( -->
+<!--   icon = "calculator", -->
+<!--   color = "success", -->
+<!--   value = 56 -->
+<!-- ) -->
+<!-- ``` -->
+
+# About
+
+:::{.card}
+This is a Quarto dashboard that provides an overview of health literacy in Newham. The dashboard is based on data from the Health Literacy Survey conducted by Newham Council and UCL. The survey collected data on health literacy, IT literacy, and numeracy among residents in Newham. The dashboard provides an interactive visualization of the survey data, allowing users to explore the relationship between health literacy and other factors.
+:::
+
+# Literacy
+
+## Row {.tabset} 
+
 
 ```{r}
 #| fig-width: 5
 #| fig-height: 4
-#| 
+#| title: Average marginal effect bar plot
+
 plot_dat <-
   bind_rows(ame_data, .id = "vars") |>
   group_by(vars, name) 
+
+```
+
+
+```{r}
+#| title: Average treatment effect forest plot
 
 plot_dat |>
   ggplot(aes(x = vars, y = ame_base, fill = name)) +
@@ -72,3 +94,87 @@ plot_dat |>
   theme(legend.position = "none") +
   coord_flip()
 ```
+
+```{r}
+#| title: Average treatment effect scatter plot
+
+plot_dat |>
+  ggplot(aes(x = vars, y = ame_base, fill = name)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Average Marginal Effect",
+       x = "Variable",
+       y = "AME") +
+  theme(legend.position = "none") +
+  coord_flip()
+```
+
+```{r}
+#| title: Ranking of average treatment effect bar plot
+
+plot_dat |>
+  ggplot(aes(x = vars, y = ame_base, fill = name)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Average Marginal Effect",
+       x = "Variable",
+       y = "AME") +
+  theme(legend.position = "none") +
+  coord_flip()
+```
+
+```{r}
+#| title: Ranking of average treatment effect line plot
+
+plot_dat |>
+  ggplot(aes(x = vars, y = ame_base, fill = name)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Average Marginal Effect",
+       x = "Variable",
+       y = "AME") +
+  theme(legend.position = "none") +
+  coord_flip()
+```
+
+```{r}
+#| title: Stratified average treatment effect tornado plots
+
+plot_dat |>
+  ggplot(aes(x = vars, y = ame_base, fill = name)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Average Marginal Effect",
+       x = "Variable",
+       y = "AME") +
+  theme(legend.position = "none") +
+  coord_flip()
+```
+
+```{r}
+#| title: Average treatment effect table
+
+plot_dat |>
+  ggplot(aes(x = vars, y = ame_base, fill = name)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Average Marginal Effect",
+       x = "Variable",
+       y = "AME") +
+  theme(legend.position = "none") +
+  coord_flip()
+```
+
+# IT Literacy
+
+TODO
+
+# Numeracy
+
+TODO
+
