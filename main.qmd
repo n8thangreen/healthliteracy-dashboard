@@ -4,6 +4,7 @@ title: "Health Literacy Dashboard"
 format: 
   dashboard:
     logo: images/newham-london-logo.png
+    scrolling: true
 ---
 
   
@@ -16,8 +17,9 @@ library(dplyr)
 library(healthliteracy)
 
 data("mrp_data")
-data("ame_data")
-data("stat_ame_data")
+data("ame_data_stan")
+# data("strat_ame_data")
+data("strat_ame_data_stan")
 ```
 
 <!-- ## {.sidebar} -->
@@ -60,6 +62,8 @@ data("stat_ame_data")
 # About
 
 :::{.card}
+## Welcome
+
 This is a Quarto dashboard that provides an overview of health literacy in Newham. The dashboard is based on data from the Health Literacy Survey conducted by Newham Council and UCL. The survey collected data on health literacy, IT literacy, and numeracy among residents in Newham. The dashboard provides an interactive visualization of the survey data, allowing users to explore the relationship between health literacy and other factors.
 :::
 
@@ -67,107 +71,224 @@ This is a Quarto dashboard that provides an overview of health literacy in Newha
 
 ## Row {.tabset} 
 
-
 ```{r}
-#| fig-width: 5
-#| fig-height: 4
-#| title: Average marginal effect bar plot
-
 plot_dat <-
   bind_rows(ame_data, .id = "vars") |>
   group_by(vars, name) 
 
 ```
 
+### Average marginal effect forest plot {.tabset}
 
 ```{r}
-#| title: Average treatment effect forest plot
+#| title: Plot
 
-plot_dat |>
-  ggplot(aes(x = vars, y = ame_base, fill = name)) +
-  geom_bar(stat = "identity") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Average Marginal Effect",
-       x = "Variable",
-       y = "AME") +
-  theme(legend.position = "none") +
-  coord_flip()
+ame_dat_ls <- list()
+
+for (i in names(ame_dat)) {
+  ame_dat_ls[[i]] <-
+    ame_dat[[i]] |>
+    group_by(name) |>
+    summarise(mean_value = mean(ame_base, na.rm = TRUE),
+              upper = quantile(ame_base, 0.975),
+              lower = quantile(ame_base, 0.025)) |>
+    mutate(variable = i,
+           var_name = paste0(variable, "_", name)) |>
+    filter(mean_value != 0)
+}
+
+ame_plot_dat <- do.call(rbind, ame_dat_ls)
+
+ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = variable)) +
+  geom_point(size = 4) +
+  geom_linerange(aes(ymin = lower, ymax = upper), size = 1.3) +
+  # geom_errorbar(aes(ymin = lower, ymax = upper)) +
+  coord_flip() +
+  xlab("Variable name") +
+  ylab("Difference in probability health literate") +
+  # ylab("Average marginal effect") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  theme_minimal()
 ```
 
-```{r}
-#| title: Average treatment effect scatter plot
+#### Explanation
 
-plot_dat |>
-  ggplot(aes(x = vars, y = ame_base, fill = name)) +
-  geom_bar(stat = "identity") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Average Marginal Effect",
-       x = "Variable",
-       y = "AME") +
-  theme(legend.position = "none") +
-  coord_flip()
+Overall, this plot visually summarizes the average effects of different variables on health literacy, showing both the point estimates and the uncertainty (confidence intervals) around those estimates. The vertical line at zero helps viewers quickly assess whether the effects are positive, negative, or insignificant.
+
+This corresponds to the gradients in the AME scatter plots.
+
+### Average marginal effect scatter plot {.tabset}
+
+```{r}
+#| title: Plot
+
+plot_ls <- list()
+
+for (i in names(ame_dat)) {
+  # Calculate means for each level of 'name'
+  means_df <-
+    ame_dat[[i]] %>%
+    group_by(name) %>%
+    summarise(mean_value = mean(value, na.rm = TRUE)) |>
+    mutate(lead_name = lead(name),
+           lead_mean_value = lead(mean_value)) %>%
+    filter(!is.na(lead_name) & !is.na(lead_mean_value))
+
+  plot_ls[[i]] <-
+    ame_dat[[i]] |>
+    ggplot(aes(x = name, y = value)) +
+    # add jitter to points
+    geom_jitter(width = 0.1, height = 0) +
+    # draw gradient line connecting the means
+    geom_segment(data = means_df,
+                 aes(x = name, xend = lead_name,
+                     y = mean_value, yend = lead_mean_value),
+                 col = "red") +
+    ylab("P(not HL)") +
+    xlab(tools::toTitleCase(stringr::str_replace_all(i, "_", " "))) +
+    ylim(0.4, 0.75) +
+    theme_minimal()
+}
+
+gridExtra::grid.arrange(grobs = plot_ls, ncol = 3)
 ```
 
-```{r}
-#| title: Ranking of average treatment effect bar plot
+#### Explanation
 
-plot_dat |>
-  ggplot(aes(x = vars, y = ame_base, fill = name)) +
+Individual scatter plots for each variable, showing how values vary across different categories (name). Each plot includes jittered points for individual observations, red lines connecting the mean values of adjacent categories, and clearly labeled axes. Finally, all the plots are displayed together in a grid format, allowing for easy comparison across different variables.
+
+The vertical spread of the point corresponds to the width of the bars in the forest plot.
+
+### Ranking of average marginal effect bar plot {.tabset}
+
+```{r}
+#| title: Plot
+
+max_rank <- 4
+
+xx <-
+  bind_rows(ame_dat, .id = "vars") |>
+  filter(ame_base != 0) |>
+  select(vars, name, variable, ame_base) |>
+  group_by(vars, name) |>
+  reshape2::dcast(variable ~ vars + name,
+                  value.var = "ame_base")
+row_ranks <-
+  xx[, -1] |>
+  apply(1, rank) |>
+  t() |>
+  apply(2, \(x) table(factor(x, levels = 1:(ncol(xx) - 1))))
+
+rank_dat <-
+  row_ranks |>
+  as_tibble() |>
+  mutate(rank = 1:n()) |>
+  tidyr::gather(key = "name", value = "count", -rank) |>
+  mutate(rank = as.integer(rank),
+         count = count / max(count))
+
+# bar plot
+rank_dat |>
+  filter(count > 0,
+         rank <= max_rank) |>
+  ggplot(aes(x = rank, y = count, fill = name)) +
   geom_bar(stat = "identity") +
+  xlim(0, max_rank) +
+  ylab("Probability of ranking") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Average Marginal Effect",
-       x = "Variable",
-       y = "AME") +
-  theme(legend.position = "none") +
-  coord_flip()
+  scale_x_discrete(limits = factor(1:max_rank),
+                   labels = 1:max_rank)
+
 ```
 
-```{r}
-#| title: Ranking of average treatment effect line plot
+#### Explanation
 
-plot_dat |>
-  ggplot(aes(x = vars, y = ame_base, fill = name)) +
-  geom_bar(stat = "identity") +
+Calculates the probabilities of ranking for different variables based on their values. It creates a bar plot that visually represents these probabilities, showing how frequently each variable appears in the top ranks (1 to 4). This allows for easy comparison of ranking probabilities among different categories, making it clear which variables are more likely to be ranked highly.
+
+Notice that the second most probable variable for ranking first isn't necessarily the most probable variable for ranking second. This is an idnication of the uncertainty in the data.
+
+### Ranking of average marginal effect line plot {.tabset}
+
+```{r}
+#| title: Plot
+
+sucra <-
+  rank_dat |>
+  group_by(name) |>
+  mutate(sucra = cumsum(count),
+         sucra = sucra / max(sucra))
+
+sucra |>
+  group_by(name) |>
+  filter(rank <= max_rank) |>
+  filter(!all(sucra == 0)) |>
+  mutate(name = as.factor(name),
+         name = droplevels(name)) |>
+  ggplot(aes(x = rank, y = sucra, colour = name)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  ylab("Probability ranking or higher") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Average Marginal Effect",
-       x = "Variable",
-       y = "AME") +
-  theme(legend.position = "none") +
-  coord_flip()
+  scale_x_discrete(limits = factor(1:max_rank),
+                   labels = 1:max_rank)
 ```
 
-```{r}
-#| title: Stratified average treatment effect tornado plots
+#### Explanation
 
-plot_dat |>
-  ggplot(aes(x = vars, y = ame_base, fill = name)) +
-  geom_bar(stat = "identity") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Average Marginal Effect",
-       x = "Variable",
-       y = "AME") +
-  theme(legend.position = "none") +
-  coord_flip()
+Calculates and visualizes the cumulative probability of ranking for different variables, effectively showing how likely each variable is to achieve a rank of 1, 2, 3, or 4 or higher. The resulting line plot allows for easy comparison between variables, illustrating their performance across ranks and helping to identify which variables consistently rank higher.
+
+People talk about the area under the curve (AUC) as a measure of the impact. If we were to value the first 4 ranks equally, then the AUC would be 1. If we were to value the first rank more than the second, then the AUC would be less than 1.
+
+### Stratified average marginal effect tornado plots {.tabset}
+
+```{r}
+#| title: Plot
+
+ame_dat_ls <- list()
+ame_plot_dat <- list()
+ggplot_list <- list()
+
+for (j in names(strat_ame_data)) {
+  for (i in names(strat_ame_data)) {
+    ame_dat_ls[[i]] <-
+      strat_ame_data[[j]][[i]] |>
+      group_by(name, level) |>
+      summarise(mean_value = mean(ame_base, na.rm = TRUE),
+                upper = quantile(ame_base, 0.975),
+                lower = quantile(ame_base, 0.025)) |>
+      mutate(variable = i,
+             var_name = paste0(variable, "_", name, "_", level)) |>
+      filter(mean_value != 0)
+  }
+  
+  ame_plot_dat[[j]] <- do.call(rbind, ame_dat_ls)
+
+  ggplot_list[[j]] <-
+    ggplot(ame_plot_dat[[j]], aes(x = var_name, y = mean_value, colour = variable)) +
+    geom_point(size = 4) +
+    geom_linerange(aes(ymin = lower, ymax = upper), size = 1.3) +
+    # geom_errorbar(aes(ymin = lower, ymax = upper)) +
+    coord_flip() +
+    xlab("Variable name") +
+    # ylab("Average marginal effect") +
+    ylab("Difference in probability health literate") +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    theme_minimal()
+}
+
+ggplot_list
 ```
 
-```{r}
-#| title: Average treatment effect table
+#### Explanation
 
-plot_dat |>
-  ggplot(aes(x = vars, y = ame_base, fill = name)) +
-  geom_bar(stat = "identity") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Average Marginal Effect",
-       x = "Variable",
-       y = "AME") +
-  theme(legend.position = "none") +
-  coord_flip()
+Compute average effects and uncertainty for various variables across different strata, then generates a series of plots to visualize these effects. Each plot displays the relationship between variable names and their average marginal effects on health literacy, highlighting how these effects vary by stratum.
+
+### Average treatment effect table {.tabset}
+
+```{r}
+#| title: Table
+
+##TODO
 ```
 
 # IT Literacy
@@ -178,3 +299,47 @@ TODO
 
 TODO
 
+# Method
+
+:::{.card}
+
+## Multilevel Regression and Post-Stratification (MRP)
+
+Multilevel regression with poststratification (MRP) is a statistical technique that combines multilevel modeling with poststratification to estimate subnational or small-area characteristics from survey data \cite{Park2004, Park2006, Lax2013, Ghitza2013}. It accounts for hierarchical structures in the data (such as individuals nested within groups) while also adjusting for known population characteristics through poststratification, providing more precise estimates for small areas or subgroups.
+
+The MRP equations can be represented as follows. The MRP regression is
+
+$$
+\pi_i = Pr(y_{i} = 1) = g^{-1} \left( \beta_0 + \beta_{1,j[i]} + \beta_{2,j[i]} + \ldots + \beta_{p,j[i]} \right)
+$$
+
+with predictions
+
+$$
+\hat{\pi}_{i} = g^{-1}\left( \hat{\beta}_0 + \hat{\beta}_{1,j[i]} + \hat{\beta}_{2,j[i]} + \ldots + \hat{\beta}_{p,j[i]} + \hat{u}_{0j} \right)
+$$
+
+where
+
+\begin{align*}
+\hat{\pi}_{i} & \text{ is the predicted outcome for individual } i, \\
+\beta_{0,j[i]}, \beta_{1,j[i]}, \ldots, \beta_{p,j[i]} & \text{ are coefficients,} \\
+u_{0j} & \text{ is the random intercept for group } j, \\
+\epsilon_{i} & \text{ is the error term for individual }.
+\end{align*}
+
+After obtaining predictions at the group level, post-stratification involves weighting these predictions by the population distribution of key stratification variables, such as age, gender, or ethnicity. This can be represented as
+
+$$
+\hat{Y}^*_{g} = \sum_{j} w_{gj} \hat{Y}_{j}
+$$
+
+where
+
+\begin{align*}
+\hat{Y}^*_{g} & \text{ is the post-stratified estimate for stratum } g, \\
+\hat{Y}_{j} & \text{ is the predicted outcome for group } j, \\
+w_{gj} & \text{ is the weight for group } j \text{ in stratum } g.
+\end{align*}
+
+:::
