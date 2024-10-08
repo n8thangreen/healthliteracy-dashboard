@@ -99,7 +99,8 @@ for (i in names(ame_dat)) {
 
 ame_plot_dat <- do.call(rbind, ame_dat_ls)
 
-ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = variable)) +
+gg <- 
+  ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = variable)) +
   geom_point(size = 4) +
   geom_linerange(aes(ymin = lower, ymax = upper), size = 1.3) +
   # geom_errorbar(aes(ymin = lower, ymax = upper)) +
@@ -109,6 +110,8 @@ ggplot(ame_plot_dat, aes(x = var_name, y = mean_value, colour = variable)) +
   # ylab("Average marginal effect") +
   geom_hline(yintercept = 0, linetype = "dashed") +
   theme_minimal()
+
+plotly::ggplotly(gg)
 ```
 
 #### Explanation
@@ -134,7 +137,7 @@ for (i in names(ame_dat)) {
            lead_mean_value = lead(mean_value)) %>%
     filter(!is.na(lead_name) & !is.na(lead_mean_value))
 
-  plot_ls[[i]] <-
+  gg <- 
     ame_dat[[i]] |>
     ggplot(aes(x = name, y = value)) +
     # add jitter to points
@@ -144,13 +147,21 @@ for (i in names(ame_dat)) {
                  aes(x = name, xend = lead_name,
                      y = mean_value, yend = lead_mean_value),
                  col = "red") +
+    ggtitle(i) +
     ylab("P(not HL)") +
     xlab(tools::toTitleCase(stringr::str_replace_all(i, "_", " "))) +
     ylim(0.4, 0.75) +
     theme_minimal()
+  
+  plot_ls[[i]] <- plotly::ggplotly(gg) |> plotly::layout(title = i)
 }
 
-gridExtra::grid.arrange(grobs = plot_ls, ncol = 3)
+# gridExtra::grid.arrange(grobs = plot_ls, ncol = 3)
+
+##TODO: how to show individual titles?
+plotly::subplot(plot_ls, nrows = 3, shareX = FALSE, shareY = TRUE) %>%
+  plotly::layout(
+    title = "Combined Plot")
 ```
 
 #### Explanation
@@ -188,7 +199,8 @@ rank_dat <-
          count = count / max(count))
 
 # bar plot
-rank_dat |>
+gg <- 
+  rank_dat |>
   filter(count > 0,
          rank <= max_rank) |>
   ggplot(aes(x = rank, y = count, fill = name)) +
@@ -199,6 +211,7 @@ rank_dat |>
   scale_x_discrete(limits = factor(1:max_rank),
                    labels = 1:max_rank)
 
+plotly::ggplotly(gg)
 ```
 
 #### Explanation
@@ -218,7 +231,8 @@ sucra <-
   mutate(sucra = cumsum(count),
          sucra = sucra / max(sucra))
 
-sucra |>
+gg <- 
+  sucra |>
   group_by(name) |>
   filter(rank <= max_rank) |>
   filter(!all(sucra == 0)) |>
@@ -231,6 +245,8 @@ sucra |>
   theme_minimal() +
   scale_x_discrete(limits = factor(1:max_rank),
                    labels = 1:max_rank)
+
+plotly::ggplotly(gg)
 ```
 
 #### Explanation
