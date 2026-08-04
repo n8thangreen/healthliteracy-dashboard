@@ -1,0 +1,12 @@
+# .rscignore
+# Files to ignore when deploying Shiny App to shinyapps.io
+
+.git/
+.Rproj.user/
+main.qmd
+main.html
+main_files/
+inst/docs/
+.gitignore
+README.md
+healthliteracy-dashboard.Rproj
