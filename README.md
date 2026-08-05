@@ -53,7 +53,6 @@ Open this project in RStudio and run one of the following depending on the proje
 shiny::runApp("app.R")
 ```
 
-
 ## Data
 
 If data files are included, be mindful of privacy and licensing; do not commit personally identifying information. If the full dataset cannot be published, include a small example dataset or instructions to obtain the data.
@@ -69,7 +68,3 @@ Contributions, issues and feature requests are welcome. Suggested workflow:
 5. Open a pull request describing your changes
 
 Please open an issue to discuss major changes before submitting large PRs.
-
-## License
-
-If no license is present, consider adding one (for example MIT for code or CC-BY for documentation). Add a `LICENSE` file to this repository with the selected terms.
