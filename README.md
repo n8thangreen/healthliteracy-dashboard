@@ -4,12 +4,12 @@ R dashboard for the UCL Newham Fellowship health literacy project.
 
 This repository contains the code and resources for an interactive R dashboard used to explore and present findings from the UCL Newham Fellowship health literacy study in Newham.
 
-Published on RPubs / Posit Connect:
-https://rpubs.com/n8than/healthliteracy
+Published on Posit Cloud Connect:
+https://019fcd9f-16a8-15d0-4b1b-27cdca68c3c8.share.connect.posit.cloud/
 
 ## Contents
 
-- R scripts and R Markdown / flexdashboard files that make up the dashboard
+- R scripts and shiny files that make up the dashboard
 - Supporting data (where included) and helper scripts
 - Documentation and usage instructions
 
@@ -21,12 +21,8 @@ https://rpubs.com/n8than/healthliteracy
 
 ## Screenshot
 
-> NOTE: The repository does not yet include the screenshot file. Add your screenshot to `images/screenshot.png` and it will appear here.
-
 ![Health Literacy Dashboard screenshot](images/screenshot.png)
 *Health Literacy Knowledge Exchange Platform — interactive dashboard showing modules, background and benchmark charts.*
-
-(If you prefer a different path or filename, update the image path above.)
 
 ## Requirements
 
@@ -53,19 +49,10 @@ if (file.exists("renv.lock")) {
 
 Open this project in RStudio and run one of the following depending on the project layout:
 
-- For an R Markdown / flexdashboard (e.g. `dashboard.Rmd`):
-
 ```r
-rmarkdown::run("path/to/dashboard.Rmd")
+shiny::runApp("app.R")
 ```
 
-- For a Shiny app with `app.R` or an app directory:
-
-```r
-shiny::runApp("path/to/app_directory_or_app.R")
-```
-
-Replace the paths above with the actual filenames in this repository.
 
 ## Data
 
@@ -86,10 +73,3 @@ Please open an issue to discuss major changes before submitting large PRs.
 ## License
 
 If no license is present, consider adding one (for example MIT for code or CC-BY for documentation). Add a `LICENSE` file to this repository with the selected terms.
-
-## Contact
-
-Author: n8thangreen
-Published RPubs: https://rpubs.com/n8than/healthliteracy
-
-If you want the README tailored further (exact run commands, package list taken from the project, screenshots, or a link to a live deployment), tell me and I'll update it to match the repo contents.
