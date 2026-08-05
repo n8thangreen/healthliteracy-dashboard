@@ -19,6 +19,15 @@ https://rpubs.com/n8than/healthliteracy
 - Filters and breakdowns by demographic groups and survey items
 - Exportable summary tables and plots
 
+## Screenshot
+
+> NOTE: The repository does not yet include the screenshot file. Add your screenshot to `images/screenshot.png` and it will appear here.
+
+![Health Literacy Dashboard screenshot](images/screenshot.png)
+*Health Literacy Knowledge Exchange Platform — interactive dashboard showing modules, background and benchmark charts.*
+
+(If you prefer a different path or filename, update the image path above.)
+
 ## Requirements
 
 - R (>= 4.0)
